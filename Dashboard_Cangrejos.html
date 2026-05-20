@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Interactivo - Proyecto Cangrejos PFS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{--bg:#0a0e17;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d45;--border:rgba(255,255,255,0.07);--accent:#3b82f6;--accent2:#60a5fa;--gold:#f59e0b;--green:#10b981;--red:#ef4444;--purple:#8b5cf6;--teal:#14b8a6;--text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);border-bottom:1px solid rgba(59,130,246,0.2);padding:0 2rem}
+.hdr-top{max-width:1440px;margin:0 auto;padding:1.25rem 0 0;display:flex;justify-content:space-between;align-items:flex-start}
+.hdr h1{font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:700;background:linear-gradient(90deg,#e2e8f0,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-sub{font-size:12px;color:var(--muted2);margin-top:4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.badges{display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap}
+.badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.4px}
+.badge-blue{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3)}
+.badge-gold{background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3)}
+.badge-green{background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3)}
+.nav{max-width:1440px;margin:0 auto;display:flex;gap:0;margin-top:1rem;overflow-x:auto}
+.nb{padding:10px 16px;font-size:12px;font-weight:500;background:none;border:none;color:var(--muted2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.nb:hover{color:var(--text)}.nb.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+.content{max-width:1440px;margin:0 auto;padding:1.25rem 2rem}
+.section{display:none}.section.active{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:.75rem;margin-bottom:1rem}
+.g32{display:grid;grid-template-columns:3fr 2fr;gap:1rem;margin-bottom:1rem}
+.mc{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;position:relative;overflow:hidden;transition:border-color .2s}
+.mc:hover{border-color:rgba(59,130,246,0.25)}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0}
+.mc.blue::before{background:var(--accent)}.mc.green::before{background:var(--green)}
+.mc.gold::before{background:var(--gold)}.mc.red::before{background:var(--red)}
+.mc.purple::before{background:var(--purple)}.mc.teal::before{background:var(--teal)}
+.mc-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.mc-val{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;line-height:1}
+.mc-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.c-blue{color:var(--accent2)}.c-green{color:var(--green)}.c-gold{color:var(--gold)}
+.c-red{color:var(--red)}.c-purple{color:var(--purple)}.c-teal{color:var(--teal)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.25rem;transition:border-color .2s}
+.card:hover{border-color:rgba(255,255,255,0.12)}
+.card-title{font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:.875rem;display:flex;align-items:center;gap:6px}
+.ctdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ch{position:relative;width:100%}
+.sl-row{display:flex;align-items:center;gap:10px;margin-bottom:.5rem}
+.sl-row label{font-size:11px;color:var(--muted2);min-width:185px}
+.sl-row input[type=range]{flex:1;accent-color:var(--accent2)}
+.sl-row span{font-size:12px;font-weight:600;color:var(--text);min-width:70px;text-align:right}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:7px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.7px;border-bottom:1px solid var(--border)}
+.tbl td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.tbl tr:hover td{background:rgba(255,255,255,0.02)}
+.lgnd{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2)}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.br-row{margin-bottom:.875rem}
+.br-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.br-track{background:rgba(255,255,255,0.07);border-radius:3px;height:7px}
+.br-fill{height:7px;border-radius:3px;transition:width .8s ease}
+.note{font-size:10px;color:var(--muted);background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:6px 10px;margin-bottom:1rem}
+.prob-bar{background:rgba(255,255,255,0.07);border-radius:6px;height:10px;margin-top:6px;overflow:hidden}
+.prob-fill{height:10px;border-radius:6px;transition:width 1s ease}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <h1>Proyecto Cangrejos — Evaluación Financiera</h1>
+      <div class="hdr-sub">
+        <span>Lumina Gold Corp.</span><span>·</span>
+        <span>El Oro, Ecuador</span><span>·</span>
+        <span>NI 43-101 Pre-Feasibility Study · Ausenco · Abril 2023</span><span>·</span>
+        <span><span class="dot-live"></span> Modelo interactivo</span>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-blue">Pre-Feasibility Study</span>
+      <span class="badge badge-gold">LOM 26 años</span>
+      <span class="badge badge-green">Au+Cu+Ag</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nb active" onclick="showTab('resumen',this)">📊 Resumen Ejecutivo</button>
+    <button class="nb" onclick="showTab('recursos',this)">⛏️ Recursos &amp; Producción</button>
+    <button class="nb" onclick="showTab('capex',this)">🏗️ CAPEX &amp; OPEX</button>
+    <button class="nb" onclick="showTab('fcf',this)">💰 Flujo de Caja</button>
+    <button class="nb" onclick="showTab('sensibilidad',this)">📈 Sensibilidad</button>
+    <button class="nb" onclick="showTab('montecarlo',this)">🎲 Monte Carlo</button>
+    <button class="nb" onclick="showTab('escenarios',this)">🔄 Escenarios</button>
+  </nav>
+</div>
+
+<div class="content">
+
+<!-- ══ RESUMEN ══ -->
+<div id="resumen" class="section active">
+  <div class="note">⚠️ Datos base: NI 43-101 Pre-Feasibility Study, Ausenco, abril 7 de 2023. Los indicadores financieros (VAN, TIR, Payback) corresponden al modelo PFS con parámetros reales del reporte técnico.</div>
+  <div class="g6">
+    <div class="mc blue"><div class="mc-lbl">VAN Post-Tax (5%)</div><div class="mc-val c-blue">2,238</div><div class="mc-sub">MUSD — PFS base case</div></div>
+    <div class="mc green"><div class="mc-lbl">TIR Post-Tax</div><div class="mc-val c-green">17.2%</div><div class="mc-sub">vs 5% descuento</div></div>
+    <div class="mc gold"><div class="mc-lbl">Payback inicial</div><div class="mc-val c-gold">5.0 años</div><div class="mc-sub">Post-tax / cap. inicial</div></div>
+    <div class="mc red"><div class="mc-lbl">CAPEX inicial</div><div class="mc-val c-red">925</div><div class="mc-sub">MUSD (excl. IVA)</div></div>
+    <div class="mc purple"><div class="mc-lbl">CAPEX total LOM</div><div class="mc-val c-purple">1,976</div><div class="mc-sub">MUSD incl. expansiones</div></div>
+    <div class="mc teal"><div class="mc-lbl">Prod. Au promedio</div><div class="mc-val c-teal">371</div><div class="mc-sub">koz Au / año</div></div>
+  </div>
+
+  <div class="g32">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>FCF post-tax y acumulado descontado (MUSD)</div>
+      <div class="lgnd">
+        <div class="li"><span class="ld" style="background:#10b981"></span>FCF Post-Tax</div>
+        <div class="li"><span class="ld" style="background:#f59e0b"></span>Acumulado desc. (5%)</div>
+      </div>
+      <div class="ch" style="height:240px"><canvas id="c-r-fcf" aria-label="FCF post-tax y acumulado"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#f59e0b"></span>Composición de costos LOM</div>
+      <div class="ch" style="height:190px"><canvas id="c-r-donut" aria-label="Composición costos"></canvas></div>
+      <div id="donut-lgnd" class="lgnd" style="margin-top:8px;justify-content:center"></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#8b5cf6"></span>VAN post-tax por precio del oro (USD/oz)</div>
+      <div class="ch" style="height:200px"><canvas id="c-r-precio" aria-label="VAN por precio Au"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#14b8a6"></span>Parámetros base — NI 43-101 PFS (Ausenco, 2023)</div>
+      <table class="tbl">
+        <thead><tr><th>Parámetro</th><th>Valor</th><th>Unidad</th></tr></thead>
+        <tbody>
+          <tr><td>Reservas probables (P+P)</td><td class="c-blue" style="font-weight:600">659</td><td>Mt</td></tr>
+          <tr><td>Ley Au LOM</td><td class="c-gold" style="font-weight:600">0.55</td><td>g/t</td></tr>
+          <tr><td>Ley Cu LOM</td><td class="c-gold" style="font-weight:600">0.10</td><td>%</td></tr>
+          <tr><td>Vida de mina (LOM)</td><td class="c-blue" style="font-weight:600">26</td><td>años</td></tr>
+          <tr><td>Pre-producción</td><td style="font-weight:600">28</td><td>meses</td></tr>
+          <tr><td>Precio Au base</td><td class="c-gold" style="font-weight:600">1,650</td><td>USD/oz</td></tr>
+          <tr><td>Precio Cu base</td><td class="c-gold" style="font-weight:600">3.75</td><td>USD/lb</td></tr>
+          <tr><td>Precio Ag base</td><td class="c-gold" style="font-weight:600">20.00</td><td>USD/oz</td></tr>
+          <tr><td>CAPEX inicial</td><td class="c-red" style="font-weight:600">925</td><td>MUSD</td></tr>
+          <tr><td>OPEX promedio LOM</td><td class="c-red" style="font-weight:600">13.23</td><td>USD/t procesado</td></tr>
+          <tr><td>Recuperación Au</td><td class="c-green" style="font-weight:600">85</td><td>%</td></tr>
+          <tr><td>Recuperación Cu</td><td class="c-green" style="font-weight:600">79</td><td>%</td></tr>
+          <tr><td>Impuesto corporativo</td><td>20</td><td>% (Ecuador)</td></tr>
+          <tr><td>Profit sharing tax</td><td>15</td><td>%</td></tr>
+          <tr><td>Royalty</td><td>3</td><td>%</td></tr>
+          <tr><td>Tasa de descuento</td><td>5</td><td>%</td></tr>
+          <tr><td>Costo de cierre</td><td>37.6</td><td>MUSD</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RECURSOS & PRODUCCIÓN ══ -->
+<div id="recursos" class="section">
+  <div class="g6">
+    <div class="mc blue"><div class="mc-lbl">Reservas P+P</div><div class="mc-val c-blue">659 Mt</div><div class="mc-sub">Probable — NI 43-101</div></div>
+    <div class="mc gold"><div class="mc-lbl">Au LOM total</div><div class="mc-val c-gold">9.8 Moz</div><div class="mc-sub">Oro producido LOM</div></div>
+    <div class="mc green"><div class="mc-lbl">Prod. Au promedio</div><div class="mc-val c-green">371 koz</div><div class="mc-sub">Oz Au / año</div></div>
+    <div class="mc teal"><div class="mc-lbl">Prod. Cu promedio</div><div class="mc-val c-teal">41 Mlbs</div><div class="mc-sub">Lbs Cu / año</div></div>
+    <div class="mc purple"><div class="mc-lbl">LOM</div><div class="mc-val c-purple">26 años</div><div class="mc-sub">Vida de mina</div></div>
+    <div class="mc red"><div class="mc-lbl">Pre-producción</div><div class="mc-val c-red">28 meses</div><div class="mc-sub">Construcción</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Throughput por fase (kt/d → Mt/a)</div>
+      <div class="ch" style="height:250px"><canvas id="c-throughput" aria-label="Throughput por fase"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#f59e0b"></span>Producción Au anual (koz)</div>
+      <div class="ch" style="height:250px"><canvas id="c-prod-au" aria-label="Producción Au anual"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#10b981"></span>Reservas: extraído acum. vs restante (Mt)</div>
+      <div class="ch" style="height:210px"><canvas id="c-reservas" aria-label="Reservas acumuladas"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#8b5cf6"></span>Recuperaciones metalúrgicas LOM (%)</div>
+      <div id="recov-bars"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CAPEX & OPEX ══ -->
+<div id="capex" class="section">
+  <div class="g4">
+    <div class="mc red"><div class="mc-lbl">CAPEX inicial</div><div class="mc-val c-red">925 M</div><div class="mc-sub">USD — excl. IVA</div></div>
+    <div class="mc gold"><div class="mc-lbl">CAPEX Expansión 1</div><div class="mc-val c-gold">342 M</div><div class="mc-sub">USD — 60 kt/d (Año 4)</div></div>
+    <div class="mc teal"><div class="mc-lbl">CAPEX Expansión 2</div><div class="mc-val c-teal">111 M</div><div class="mc-sub">USD — 80 kt/d (Año 7)</div></div>
+    <div class="mc purple"><div class="mc-lbl">CAPEX Sostenimiento</div><div class="mc-val c-purple">598 M</div><div class="mc-sub">USD — LOM total</div></div>
+  </div>
+  <div class="g4">
+    <div class="mc blue"><div class="mc-lbl">CAPEX total LOM</div><div class="mc-val c-blue">1,976 M</div><div class="mc-sub">USD total</div></div>
+    <div class="mc green"><div class="mc-lbl">OPEX LOM promedio</div><div class="mc-val c-green">13.23</div><div class="mc-sub">USD/t procesado</div></div>
+    <div class="mc gold"><div class="mc-lbl">OPEX total LOM</div><div class="mc-val c-gold">8,714 M</div><div class="mc-sub">USD operativo total</div></div>
+    <div class="mc red"><div class="mc-lbl">Costo cierre</div><div class="mc-val c-red">37.6 M</div><div class="mc-sub">USD (Año 26)</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#ef4444"></span>CAPEX por fase y componente (MUSD)</div>
+      <div class="ch" style="height:270px"><canvas id="c-capex-bar" aria-label="CAPEX por fase"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#f59e0b"></span>OPEX unitario por fase (USD/t procesado)</div>
+      <div class="ch" style="height:270px"><canvas id="c-opex-fase" aria-label="OPEX por fase"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="ctdot" style="background:#8b5cf6"></span>Desglose OPEX total LOM (MUSD)</div>
+    <div id="opex-desglose"></div>
+  </div>
+</div>
+
+<!-- ══ FLUJO DE CAJA ══ -->
+<div id="fcf" class="section">
+  <div class="note">Los sliders permiten explorar escenarios desde los parámetros base del PFS. Los valores del PFS: Au $1,650/oz · Cu $3.75/lb · CAPEX inicial $925M · OPEX $13.23/t · Imp. 20% · Desc. 5%</div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Parámetros del modelo — ajusta desde el caso base PFS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 2.5rem">
+      <div>
+        <div class="sl-row"><label>Precio Au (USD/oz)</label><input type="range" min="1000" max="3000" step="50" value="1650" id="f-pAu" oninput="updateFCF()"><span id="f-pAu-v">1,650</span></div>
+        <div class="sl-row"><label>Precio Cu (USD/lb)</label><input type="range" min="2" max="6" step="0.25" value="3.75" id="f-pCu" oninput="updateFCF()"><span id="f-pCu-v">3.75</span></div>
+        <div class="sl-row"><label>CAPEX inicial (MUSD)</label><input type="range" min="600" max="1500" step="25" value="925" id="f-capex" oninput="updateFCF()"><span id="f-capex-v">925</span></div>
+        <div class="sl-row"><label>OPEX promedio (USD/t)</label><input type="range" min="8" max="25" step="0.1" value="13.23" id="f-opex" oninput="updateFCF()"><span id="f-opex-v">13.23</span></div>
+      </div>
+      <div>
+        <div class="sl-row"><label>Tasa descuento (%)</label><input type="range" min="1" max="15" step="1" value="5" id="f-desc" oninput="updateFCF()"><span id="f-desc-v">5%</span></div>
+        <div class="sl-row"><label>Impuesto corporativo (%)</label><input type="range" min="10" max="35" step="1" value="20" id="f-imp" oninput="updateFCF()"><span id="f-imp-v">20%</span></div>
+        <div class="sl-row"><label>Profit sharing (%)</label><input type="range" min="5" max="25" step="1" value="15" id="f-ps" oninput="updateFCF()"><span id="f-ps-v">15%</span></div>
+        <div class="sl-row"><label>Royalty (%)</label><input type="range" min="0" max="8" step="0.5" value="3" id="f-roy" oninput="updateFCF()"><span id="f-roy-v">3%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g4" style="margin-bottom:1rem">
+    <div class="mc green"><div class="mc-lbl">VAN Pre-Tax (5%)</div><div class="mc-val c-green" id="f-van-pre">—</div><div class="mc-sub">MUSD</div></div>
+    <div class="mc blue"><div class="mc-lbl">VAN Post-Tax (5%)</div><div class="mc-val c-blue" id="f-van-post">—</div><div class="mc-sub">MUSD</div></div>
+    <div class="mc gold"><div class="mc-lbl">TIR Pre-Tax</div><div class="mc-val c-gold" id="f-tir-pre">—</div><div class="mc-sub">%</div></div>
+    <div class="mc teal"><div class="mc-lbl">TIR Post-Tax</div><div class="mc-val c-teal" id="f-tir-post">—</div><div class="mc-sub">%</div></div>
+    <div class="mc purple"><div class="mc-lbl">Payback inicial</div><div class="mc-val c-purple" id="f-pb">—</div><div class="mc-sub">años</div></div>
+    <div class="mc red"><div class="mc-lbl">Ingresos brutos LOM</div><div class="mc-val c-red" id="f-ing">—</div><div class="mc-sub">MUSD</div></div>
+    <div class="mc blue"><div class="mc-lbl">FCF Libre LOM</div><div class="mc-val c-blue" id="f-fcf-tot">—</div><div class="mc-sub">MUSD post-tax</div></div>
+    <div class="mc green"><div class="mc-lbl">Margen EBITDA avg</div><div class="mc-val c-green" id="f-margen">—</div><div class="mc-sub">%</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Flujo de caja integrado por año (MUSD) — fases de expansión</div>
+    <div class="lgnd">
+      <div class="li"><span class="ld" style="background:#f59e0b"></span>Ingresos</div>
+      <div class="li"><span class="ld" style="background:#ef4444"></span>OPEX</div>
+      <div class="li"><span class="ld" style="background:#7f1d1d"></span>CAPEX</div>
+      <div class="li"><span class="ld" style="background:#475569"></span>Impuestos</div>
+      <div class="li"><span class="ld" style="background:#3b82f6"></span>FCF Post-Tax</div>
+      <div class="li"><span class="ld" style="background:#f59e0b;border:1px dashed"></span>Acum. Desc.</div>
+    </div>
+    <div class="ch" style="height:320px"><canvas id="c-fcf-main" aria-label="Flujo de caja integrado"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#10b981"></span>Acumulado descontado — punto equilibrio</div>
+      <div class="ch" style="height:200px"><canvas id="c-fcf-cum" aria-label="FCF acumulado"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#8b5cf6"></span>EBITDA vs FCF Post-Tax por año</div>
+      <div class="ch" style="height:200px"><canvas id="c-ebitda" aria-label="EBITDA vs FCF"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SENSIBILIDAD ══ -->
+<div id="sensibilidad" class="section">
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Rango del análisis</div>
+    <div class="sl-row"><label>Variación Tornado (+/- %)</label><input type="range" min="5" max="40" step="5" value="20" id="sl-torn" oninput="document.getElementById('sl-torn-v').textContent=this.value+'%';drawTornado();drawSpider()"><span id="sl-torn-v">20%</span></div>
+  </div>
+  <div class="note">Tabla oficial PFS: ±10%/±20% en precios → TIR 10.0%–23.1% (VAN $817M–$3,540M) | ±20% OPEX → TIR 14.2%–20.0% | ±20% CAPEX → TIR 15.0%–20.1%</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#ef4444"></span>Tornado — impacto en VAN (MUSD)</div>
+      <div class="ch" style="height:270px"><canvas id="c-torn-van" aria-label="Tornado VAN"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Tornado — impacto en TIR (%)</div>
+      <div class="ch" style="height:270px"><canvas id="c-torn-tir" aria-label="Tornado TIR"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#8b5cf6"></span>Araña — sensibilidad del VAN</div>
+      <div id="spider-lgnd" class="lgnd" style="margin-bottom:6px"></div>
+      <div class="ch" style="height:240px"><canvas id="c-spider" aria-label="Araña VAN"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#14b8a6"></span>Araña — sensibilidad de la TIR</div>
+      <div class="ch" style="height:240px"><canvas id="c-spider-tir" aria-label="Araña TIR"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="card-title"><span class="ctdot" style="background:#f59e0b"></span>Matriz VAN post-tax (MUSD) — Precio Au vs CAPEX inicial</div>
+    <div id="matriz-table" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- ══ MONTE CARLO ══ -->
+<div id="montecarlo" class="section">
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Configuración simulación</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 2rem">
+      <div class="sl-row"><label>Variación parámetros (+/- %)</label><input type="range" min="5" max="30" step="5" value="10" id="mc-var" oninput="document.getElementById('mc-var-v').textContent=this.value+'%';runMC()"><span id="mc-var-v">10%</span></div>
+      <div class="sl-row"><label>Número de simulaciones</label><input type="range" min="500" max="5000" step="500" value="2000" id="mc-n" oninput="document.getElementById('mc-n-v').textContent=Number(this.value).toLocaleString();runMC()"><span id="mc-n-v">2,000</span></div>
+    </div>
+  </div>
+  <div class="g4" style="margin-bottom:1rem">
+    <div class="mc green"><div class="mc-lbl">VAN promedio sim.</div><div class="mc-val c-green" id="mc-van-avg">—</div><div class="mc-sub">MUSD</div></div>
+    <div class="mc red"><div class="mc-lbl">P(VAN &lt; 0)</div><div class="mc-val c-red" id="mc-prob">—</div><div class="mc-sub">Probabilidad</div>
+      <div class="prob-bar"><div class="prob-fill" id="mc-prob-bar" style="background:#ef4444;width:0%"></div></div></div>
+    <div class="mc blue"><div class="mc-lbl">TIR promedio sim.</div><div class="mc-val c-blue" id="mc-tir-avg">—</div><div class="mc-sub">%</div></div>
+    <div class="mc gold"><div class="mc-lbl">Desv. estándar VAN</div><div class="mc-val c-gold" id="mc-std">—</div><div class="mc-sub">MUSD</div></div>
+  </div>
+  <div class="g3" style="margin-bottom:1rem">
+    <div class="mc teal"><div class="mc-lbl">VAN P10</div><div class="mc-val c-teal" id="mc-p10">—</div><div class="mc-sub">Percentil 10%</div></div>
+    <div class="mc blue"><div class="mc-lbl">VAN P50 (mediana)</div><div class="mc-val c-blue" id="mc-p50">—</div><div class="mc-sub">Percentil 50%</div></div>
+    <div class="mc green"><div class="mc-lbl">VAN P90</div><div class="mc-val c-green" id="mc-p90">—</div><div class="mc-sub">Percentil 90%</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#10b981"></span>Distribución VAN (MUSD)</div>
+      <div class="ch" style="height:220px"><canvas id="c-mc-van" aria-label="Histograma VAN MC"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Distribución TIR (%)</div>
+      <div class="ch" style="height:220px"><canvas id="c-mc-tir" aria-label="Histograma TIR MC"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="card-title"><span class="ctdot" style="background:#8b5cf6"></span>Curva de probabilidad acumulada del VAN</div>
+    <div class="ch" style="height:200px"><canvas id="c-mc-cum" aria-label="CDF VAN"></canvas></div>
+  </div>
+</div>
+
+<!-- ══ ESCENARIOS ══ -->
+<div id="escenarios" class="section">
+  <div class="note">Escenarios calculados variando precio Au ±20% desde base PFS ($1,650/oz). Pesimista: $1,320/oz | Base: $1,650/oz | Optimista: $1,980/oz. Equivale exactamente a la tabla de sensibilidad del PFS.</div>
+  <div class="g3">
+    <div class="card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="card-title"><span class="ctdot" style="background:#ef4444"></span>Pesimista (Au $1,320/oz — -20%)</div>
+      <div class="mc red" style="margin-bottom:.5rem"><div class="mc-lbl">VAN Post-Tax (5%)</div><div class="mc-val c-red" id="esc-van-p">—</div><div class="mc-sub">MUSD</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div class="mc red"><div class="mc-lbl">TIR</div><div class="mc-val c-red" id="esc-tir-p">—</div></div>
+        <div class="mc red"><div class="mc-lbl">Payback</div><div class="mc-val c-red" id="esc-pb-p">—</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:.5rem">PFS ref: VAN $817M · TIR 10.0%</div>
+    </div>
+    <div class="card" style="border-color:rgba(59,130,246,0.4)">
+      <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>Base (Au $1,650/oz)</div>
+      <div class="mc blue" style="margin-bottom:.5rem"><div class="mc-lbl">VAN Post-Tax (5%)</div><div class="mc-val c-blue" id="esc-van-b">—</div><div class="mc-sub">MUSD</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div class="mc blue"><div class="mc-lbl">TIR</div><div class="mc-val c-blue" id="esc-tir-b">—</div></div>
+        <div class="mc blue"><div class="mc-lbl">Payback</div><div class="mc-val c-blue" id="esc-pb-b">—</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:.5rem">PFS ref: VAN $2,238M · TIR 17.2%</div>
+    </div>
+    <div class="card" style="border-color:rgba(16,185,129,0.3)">
+      <div class="card-title"><span class="ctdot" style="background:#10b981"></span>Optimista (Au $1,980/oz — +20%)</div>
+      <div class="mc green" style="margin-bottom:.5rem"><div class="mc-lbl">VAN Post-Tax (5%)</div><div class="mc-val c-green" id="esc-van-o">—</div><div class="mc-sub">MUSD</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div class="mc green"><div class="mc-lbl">TIR</div><div class="mc-val c-green" id="esc-tir-o">—</div></div>
+        <div class="mc green"><div class="mc-lbl">Payback</div><div class="mc-val c-green" id="esc-pb-o">—</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:.5rem">PFS ref: VAN $3,540M · TIR 23.1%</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#3b82f6"></span>VAN post-tax por escenario (MUSD)</div>
+      <div class="ch" style="height:240px"><canvas id="c-esc-van" aria-label="VAN escenarios"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ctdot" style="background:#10b981"></span>FCF post-tax — comparativa 3 escenarios</div>
+      <div class="ch" style="height:240px"><canvas id="c-esc-fcf" aria-label="FCF tres escenarios"></canvas></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+Chart.defaults.color='#64748b';
+Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+const CH={};
+function mk(id,cfg){if(CH[id])CH[id].destroy();CH[id]=new Chart(document.getElementById(id),cfg);}
+
+// ══ PARÁMETROS BASE REALES DEL PFS NI 43-101 ══
+// Producción escalonada: 30kt/d (Años 1-3) → 60kt/d (Años 4-6) → 80kt/d (Año 7+)
+// Pre-producción: 28 meses ≈ 2.33 años (modelado como 2 años en el modelo anual)
+// LOM: 26 años operativos
+// Recuperaciones: Au 85%, Cu 79%, Ag 54%
+// Impuesto: 20% federal + 15% profit sharing = ~35% efectivo sobre utilidades
+// Royalty: 3%
+// Cierre: $37.6M
+const BASE = {
+  lom: 26,
+  reservas: 659,           // Mt
+  // Throughput por fase (Mt/a)
+  tp_f1: 10.95,            // Años 1-3: 30 kt/d
+  tp_f2: 21.90,            // Años 4-6: 60 kt/d
+  tp_f3: 29.20,            // Año 7+: 80 kt/d
+  ley_au: 0.55,            // g/t
+  ley_cu: 0.10,            // %
+  ley_ag: 0.68,            // g/t
+  rec_au: 0.85,
+  rec_cu: 0.79,
+  rec_ag: 0.54,
+  pAu: 1650,               // USD/oz
+  pCu: 3.75,               // USD/lb
+  pAg: 20.00,              // USD/oz
+  royalty: 0.03,
+  // CAPEX por fase (MUSD)
+  capex_ini: 925,
+  capex_exp1: 342,
+  capex_exp2: 111,
+  capex_sust: 598,
+  cierre: 37.6,
+  // OPEX promedio LOM (USD/t) — varía por fase
+  opex_f1: 21.16,          // Fase 1
+  opex_f2: 15.85,          // Fase 2
+  opex_f3: 12.51,          // Fase 3
+  imp_fed: 0.20,           // 20% federal
+  imp_ps: 0.15,            // 15% profit sharing
+  desc: 0.05,
+  pp: 2                    // años pre-producción (modelo anual simplificado)
+};
+
+function throughput(yr, p){
+  // yr es año operativo (1-indexado desde inicio operación)
+  if(yr<=3) return p.tp_f1;
+  if(yr<=6) return p.tp_f2;
+  return p.tp_f3;
+}
+function opexUnit(yr, p){
+  if(yr<=3) return p.opex_f1;
+  if(yr<=6) return p.opex_f2;
+  return p.opex_f3;
+}
+
+// Factor conversión: g/t Au → USD/t mineral procesado (simplificado)
+// Ingresos = tp * ley_au/31.1035 * rec_au * pAu * (1-royalty)
+//          + tp * ley_cu/100 * 2204.62 * rec_cu * pCu * (1-royalty)
+//          + tp * ley_ag/31.1035 * rec_ag * pAg * (1-royalty)
+function ingresosAnuales(tp, p){
+  const au = tp*1e6 * (p.ley_au/31.1035) * p.rec_au * p.pAu * (1-p.royalty);
+  const cu = tp*1e6 * (p.ley_cu/100) * 2204.62 * p.rec_cu * p.pCu * (1-p.royalty);
+  const ag = tp*1e6 * (p.ley_ag/31.1035) * p.rec_ag * p.pAg * (1-p.royalty);
+  return au+cu+ag;
+}
+
+function calcModel(p){
+  const n = p.pp + p.lom + 1; // pre-prod + operación + cierre
+  let fcf_pre=[], fcf_post=[], ing_arr=[], cap_arr=[], op_arr=[], tax_arr=[], ebitda_arr=[], cie_arr=[];
+  // Distribución CAPEX inicial en pre-producción (2 años): 60/40
+  const cap_dist_pp=[0.60,0.40];
+
+  for(let i=0;i<n;i++){
+    const yr_op = i - p.pp + 1; // año operativo (negativo = pre-prod)
+    const tp = (yr_op>=1&&yr_op<=p.lom) ? throughput(yr_op, p) : 0;
+    const ing = (yr_op>=1&&yr_op<=p.lom) ? ingresosAnuales(tp, p) : 0;
+    const op  = (yr_op>=1&&yr_op<=p.lom) ? -(tp * 1e6 * opexUnit(yr_op, p)) : 0;
+
+    // CAPEX en USD (p.capex_ini está en MUSD → multiplicar por 1e6)
+    let cap = 0;
+    if(yr_op===-1) cap = -p.capex_ini*1e6*cap_dist_pp[0];
+    if(yr_op===0)  cap = -p.capex_ini*1e6*cap_dist_pp[1];
+    if(yr_op===3)  cap -= p.capex_exp1*1e6;
+    if(yr_op===6)  cap -= p.capex_exp2*1e6;
+    // Sostenimiento distribuido uniformemente durante operación
+    if(yr_op>=1&&yr_op<=p.lom) cap -= (p.capex_sust*1e6)/p.lom;
+
+    const cie = (yr_op===p.lom+1) ? -p.cierre*1e6 : 0;
+    const ebitda = ing+op+cie;
+    const dep = (yr_op>=1&&yr_op<=p.lom) ? -(p.capex_ini*1e6/5) : 0; // 5 años depreciación inicial
+    const ait = ebitda+dep;
+    // Impuesto: profit sharing 15% + federal 20% sobre ingreso neto
+    const tax = (ait>0) ? -(ait * (p.imp_ps + p.imp_fed)) : 0;
+
+    ing_arr.push(ing); cap_arr.push(cap); op_arr.push(op);
+    tax_arr.push(tax); ebitda_arr.push(ebitda); cie_arr.push(cie);
+    fcf_pre.push(ebitda+cap);
+    fcf_post.push(ebitda+cap+tax);
+  }
+
+  function npv(r,cf){return cf.reduce((s,v,i)=>s+v/Math.pow(1+r,i),0)/1e6;}
+  function irrCalc(cf){
+    let lo=0.001,hi=5;
+    for(let k=0;k<150;k++){const m=(lo+hi)/2; cf.reduce((s,v,i)=>s+v/Math.pow(1+m,i),0)>0?lo=m:hi=m;}
+    return(lo+hi)/2;
+  }
+  function pb(cf){let c=0;for(let i=0;i<cf.length;i++){const pv=c;c+=cf[i];if(c>=0)return i===0?0:(i-1)+Math.abs(pv)/Math.max(cf[i],0.01);}return NaN;}
+  function cumD(r,cf){let s=0;return cf.map((v,i)=>{s+=v/Math.pow(1+r,i);return+(s/1e6).toFixed(1);});}
+
+  return{n, ing_arr, cap_arr, op_arr, tax_arr, ebitda_arr, cie_arr, fcf_pre, fcf_post,
+    cum: cumD(p.desc, fcf_post),
+    npvPre:  npv(p.desc, fcf_pre),
+    npvPost: npv(p.desc, fcf_post),
+    irrPre:  irrCalc(fcf_pre)*100,
+    irrPost: irrCalc(fcf_post)*100,
+    pbPost:  pb(fcf_post),
+    totIng:  ing_arr.reduce((s,v)=>s+v,0)/1e6,
+    totFcf:  fcf_post.reduce((s,v)=>s+v,0)/1e6,
+    avgEbitda: ebitda_arr.filter(v=>v>0).reduce((s,v,_,a)=>s+v/a.length,0)/1e6
+  };
+}
+
+function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function init(){
+  const R = calcModel(BASE);
+  const lbl = Array.from({length:R.n},(_,i)=>'A'+(i-BASE.pp));
+  const iM = v=>+(v/1e6).toFixed(1);
+
+  // Resumen FCF
+  mk('c-r-fcf',{type:'line',data:{labels:lbl,datasets:[
+    {label:'FCF Post-Tax',data:R.fcf_post.map(iM),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',fill:true,tension:0.35,pointRadius:2,borderWidth:2},
+    {label:'Acum Desc (5%)',data:R.cum,borderColor:'#f59e0b',borderDash:[5,3],tension:0.35,pointRadius:1,yAxisID:'y2',borderWidth:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}},y:{ticks:{callback:v=>v+'M'}},y2:{position:'right',ticks:{callback:v=>v+'M'},grid:{drawOnChartArea:false}}}}});
+
+  // Donut costos
+  const tOp=8714, tCapIni=925, tCapExp=342+111, tCapSust=598, tCie=37.6, tTax=Math.abs(R.tax_arr.reduce((s,v)=>s+v,0)/1e6);
+  const dData=[tCapIni,tCapExp,tCapSust,tOp,tTax.toFixed(0)*1,tCie];
+  const dLabels=['CAPEX inicial','CAPEX expansiones','CAPEX sost.','OPEX total','Impuestos','Cierre'];
+  const dColors=['#1e40af','#3b82f6','#60a5fa','#ef4444','#f59e0b','#64748b'];
+  mk('c-r-donut',{type:'doughnut',data:{labels:dLabels,datasets:[{data:dData,backgroundColor:dColors,borderWidth:1,borderColor:'#111827'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': $'+Number(ctx.raw).toLocaleString()+'M'}}}}});
+  const dl=document.getElementById('donut-lgnd');
+  dLabels.forEach((l,i)=>{const d=document.createElement('div');d.className='li';d.innerHTML=`<span class="ld" style="background:${dColors[i]}"></span>${l}`;dl.appendChild(d);});
+
+  // VAN por precio Au
+  const auPrices=[1200,1320,1485,1650,1815,1980,2200,2500];
+  const vansPAu=auPrices.map(p=>{const pp={...BASE,pAu:p};return calcModel(pp).npvPost.toFixed(0)*1;});
+  mk('c-r-precio',{type:'bar',data:{labels:auPrices.map(p=>'$'+p),datasets:[{data:vansPAu,backgroundColor:vansPAu.map(v=>v<0?'rgba(239,68,68,0.7)':v<1000?'rgba(245,158,11,0.7)':'rgba(59,130,246,0.7)'),borderColor:vansPAu.map(v=>v<0?'#ef4444':v<1000?'#f59e0b':'#3b82f6'),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'M'}}}}});
+
+  // Throughput por fase
+  const tpLbl=['Fase 1\n(Años 1-3)','Fase 2\n(Años 4-6)','Fase 3\n(Año 7-26)'];
+  mk('c-throughput',{type:'bar',data:{labels:tpLbl,datasets:[
+    {label:'Mt/año',data:[10.95,21.90,29.20],backgroundColor:['#1e3a8a','#2563eb','#3b82f6'],borderRadius:5,yAxisID:'y'},
+    {label:'kt/día',data:[30,60,80],backgroundColor:['rgba(245,158,11,0.7)','rgba(245,158,11,0.7)','rgba(245,158,11,0.7)'],borderRadius:5,yAxisID:'y2'},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:v=>v+' Mt/a'}},y2:{position:'right',ticks:{callback:v=>v+' kt/d'},grid:{drawOnChartArea:false}}}}});
+
+  // Producción Au anual (koz) — datos reales del PFS
+  const auProd=[202,286,214,435,489,508,579,604,621,522,447,453,433,501,621,837,411,348,384,333,492,500,399,371,400,166];
+  const auLbl=auProd.map((_,i)=>'A'+(i+1));
+  mk('c-prod-au',{type:'bar',data:{labels:auLbl,datasets:[{data:auProd,backgroundColor:auProd.map(v=>v>=500?'rgba(245,158,11,0.85)':'rgba(245,158,11,0.55)'),borderColor:'#f59e0b',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},annotation:{annotations:{avg:{type:'line',yMin:371,yMax:371,borderColor:'#ef4444',borderWidth:2,borderDash:[5,3]}}}},scales:{y:{ticks:{callback:v=>v+' koz'}}}}});
+
+  // Reservas
+  let cumR2=0,rrLeft=659;
+  const cumRArr=[],restArr=[];
+  for(let i=0;i<26;i++){
+    const tp=throughput(i+1,BASE);
+    const ext=Math.min(tp,rrLeft);
+    cumR2+=ext; rrLeft=Math.max(0,rrLeft-ext);
+    cumRArr.push(+cumR2.toFixed(1));
+    restArr.push(+rrLeft.toFixed(1));
+  }
+  mk('c-reservas',{type:'line',data:{labels:auLbl,datasets:[
+    {label:'Extraído acum.',data:cumRArr,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',fill:true,tension:0.3,pointRadius:2},
+    {label:'Restante',data:restArr,borderColor:'#3b82f6',borderDash:[5,3],tension:0.3,pointRadius:1},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:v=>v+' Mt'}}}}});
+
+  // Recuperaciones
+  const recovData=[['Au (oro)','85%',0.85,'#f59e0b'],['Cu (cobre)','79%',0.79,'#ef4444'],['Ag (plata)','54%',0.54,'#94a3b8']];
+  document.getElementById('recov-bars').innerHTML=recovData.map(([n,v,f,c])=>`<div class="br-row"><div class="br-top"><span style="color:var(--text)">${n}</span><span style="color:${c};font-weight:600">${v}</span></div><div class="br-track"><div class="br-fill" style="background:${c};width:${f*100}%"></div></div></div>`).join('');
+
+  // CAPEX barras
+  mk('c-capex-bar',{type:'bar',data:{labels:['CAPEX\nInicial','CAPEX\nExp. 1','CAPEX\nExp. 2','CAPEX\nSost.'],datasets:[
+    {label:'Proceso (US$M)',data:[401,230,73,70],backgroundColor:'rgba(30,64,175,0.8)',stack:'s'},
+    {label:'Minería',data:[14,0,1,50],backgroundColor:'rgba(37,99,235,0.8)',stack:'s'},
+    {label:'Infraestr.',data:[62,17,6,23],backgroundColor:'rgba(96,165,250,0.8)',stack:'s'},
+    {label:'Indirectos/Conting.',data:[109,43,14,2],backgroundColor:'rgba(148,163,184,0.6)',stack:'s'},
+    {label:'Otros',data:[339,52,17,453],backgroundColor:'rgba(245,158,11,0.6)',stack:'s'},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>v+'M'}}}}});
+
+  // OPEX por fase
+  mk('c-opex-fase',{type:'bar',data:{labels:['Fase 1\n(30kt/d)\nAños 1-3','Fase 2\n(60kt/d)\nAños 4-6','Fase 3\n(80kt/d)\nAño 7+','LOM\npromedio'],datasets:[
+    {label:'Minería',data:[10.66,6.27,4.37,4.84],backgroundColor:'rgba(245,158,11,0.7)',stack:'s'},
+    {label:'Procesamiento',data:[8.32,8.54,7.44,7.59],backgroundColor:'rgba(239,68,68,0.7)',stack:'s'},
+    {label:'G&A',data:[2.19,1.04,0.70,0.80],backgroundColor:'rgba(139,92,246,0.7)',stack:'s'},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:11}}}},scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>v+' USD/t'}}}}});
+
+  // Desglose OPEX LOM
+  const opexD=[['Procesamiento',4999,'#ef4444'],['Minería (por t milled)',3188,'#f59e0b'],['G&A',527,'#8b5cf6']];
+  const totOp=8714;
+  document.getElementById('opex-desglose').innerHTML=opexD.map(([n,v,c])=>`<div class="br-row"><div class="br-top"><span style="color:var(--text)">${n}</span><span style="color:${c};font-weight:600">$${v.toLocaleString()}M (${(v/totOp*100).toFixed(0)}%)</span></div><div class="br-track"><div class="br-fill" style="background:${c};width:${(v/totOp*100).toFixed(1)}%"></div></div></div>`).join('');
+
+  updateFCF();
+  drawTornado();
+  drawSpider();
+  runMC();
+  buildEscenarios();
+  buildMatriz();
+}
+
+function getParams(){
+  return {...BASE,
+    pAu:  +document.getElementById('f-pAu').value,
+    pCu:  +document.getElementById('f-pCu').value,
+    capex_ini: +document.getElementById('f-capex').value,
+    opex_f1: +document.getElementById('f-opex').value * (BASE.opex_f1/BASE.opex_f3),
+    opex_f2: +document.getElementById('f-opex').value * (BASE.opex_f2/BASE.opex_f3),
+    opex_f3: +document.getElementById('f-opex').value,
+    desc:  +document.getElementById('f-desc').value/100,
+    imp_fed: +document.getElementById('f-imp').value/100,
+    imp_ps:  +document.getElementById('f-ps').value/100,
+    royalty: +document.getElementById('f-roy').value/100,
+  };
+}
+
+function updateFCF(){
+  const p = getParams();
+  document.getElementById('f-pAu-v').textContent   = Number(p.pAu).toLocaleString();
+  document.getElementById('f-pCu-v').textContent   = p.pCu.toFixed(2);
+  document.getElementById('f-capex-v').textContent = Number(p.capex_ini).toLocaleString();
+  document.getElementById('f-opex-v').textContent  = p.opex_f3.toFixed(2);
+  document.getElementById('f-desc-v').textContent  = Math.round(p.desc*100)+'%';
+  document.getElementById('f-imp-v').textContent   = Math.round(p.imp_fed*100)+'%';
+  document.getElementById('f-ps-v').textContent    = Math.round(p.imp_ps*100)+'%';
+  document.getElementById('f-roy-v').textContent   = (p.royalty*100).toFixed(1)+'%';
+
+  const Rf = calcModel(p);
+  const totOpex=Rf.op_arr.reduce((s,v)=>s+v,0)/1e6;
+  const avgEb=Rf.ebitda_arr.filter(v=>v>0);
+  const totIngPromed = Rf.totIng / 26; const margen=totIngPromed>0?((avgEb.reduce((s,v)=>s+v,0)/avgEb.length)/totIngPromed*100).toFixed(0):'—';
+
+  document.getElementById('f-van-pre').textContent  = Rf.npvPre.toFixed(0)+' M';
+  document.getElementById('f-van-post').textContent = Rf.npvPost.toFixed(0)+' M';
+  document.getElementById('f-tir-pre').textContent  = Rf.irrPre.toFixed(1)+'%';
+  document.getElementById('f-tir-post').textContent = Rf.irrPost.toFixed(1)+'%';
+  document.getElementById('f-pb').textContent       = Rf.pbPost.toFixed(1)+' años';
+  document.getElementById('f-ing').textContent      = Rf.totIng.toFixed(0)+' M';
+  document.getElementById('f-fcf-tot').textContent  = Rf.totFcf.toFixed(0)+' M';
+  document.getElementById('f-margen').textContent   = margen+'%';
+
+  const lbl=Array.from({length:Rf.n},(_,i)=>'A'+(i-BASE.pp));
+  const iM=v=>+(v/1e6).toFixed(1);
+
+  mk('c-fcf-main',{type:'bar',data:{labels:lbl,datasets:[
+    {label:'Ingresos',   data:Rf.ing_arr.map(iM),backgroundColor:'rgba(245,158,11,0.7)',stack:'s'},
+    {label:'OPEX',       data:Rf.op_arr.map(iM), backgroundColor:'rgba(239,68,68,0.7)',stack:'s'},
+    {label:'CAPEX',      data:Rf.cap_arr.map(iM),backgroundColor:'rgba(127,29,29,0.85)',stack:'s'},
+    {label:'Impuestos',  data:Rf.tax_arr.map(iM),backgroundColor:'rgba(139,92,246,0.7)',stack:'s'},
+    {label:'FCF Post-Tax',data:Rf.fcf_post.map(iM),type:'line',borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:0.3,pointRadius:2,yAxisID:'y'},
+    {label:'Acum Desc',  data:Rf.cum,type:'line',borderColor:'#f59e0b',borderDash:[5,3],tension:0.3,pointRadius:1,yAxisID:'y2'},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{maxRotation:45,autoSkip:false,font:{size:9}}},y:{stacked:true,ticks:{callback:v=>v+'M'}},y2:{position:'right',ticks:{callback:v=>v+'M'},grid:{drawOnChartArea:false}}}}});
+
+  mk('c-fcf-cum',{type:'line',data:{labels:lbl,datasets:[
+    {label:'Acum Desc.',data:Rf.cum,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',fill:true,tension:0.3,pointRadius:2},
+    {label:'Cero',data:lbl.map(()=>0),borderColor:'rgba(255,255,255,0.2)',borderDash:[3,3],pointRadius:0},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'M'}}}}});
+
+  mk('c-ebitda',{type:'line',data:{labels:lbl,datasets:[
+    {label:'EBITDA',    data:Rf.ebitda_arr.map(iM),borderColor:'#8b5cf6',tension:0.3,pointRadius:2,borderWidth:2},
+    {label:'FCF Post-Tax',data:Rf.fcf_post.map(iM),borderColor:'#10b981',tension:0.3,pointRadius:2,borderDash:[5,3],borderWidth:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:v=>v+'M'}}}}});
+}
+
+// Variables de sensibilidad usando parámetros reales del PFS
+const SENS_KEYS = [
+  ['pAu','Precio Au','#3b82f6'],
+  ['pCu','Precio Cu','#14b8a6'],
+  ['capex_ini','CAPEX inicial','#ef4444'],
+  ['opex_f3','OPEX (Fase 3)','#8b5cf6'],
+  ['rec_au','Recuperación Au','#f59e0b'],
+  ['royalty','Royalty','#10b981'],
+];
+
+function calcNPV(params){ return calcModel(params).npvPost; }
+function calcIRR(params){ return calcModel(params).irrPost; }
+
+function drawTornado(){
+  const pct = +document.getElementById('sl-torn').value/100;
+  const bv=calcNPV(BASE), bt=calcIRR(BASE);
+  const vu=[],vd=[],tu=[],td=[];
+  SENS_KEYS.forEach(([k])=>{
+    const pu={...BASE};pu[k]=BASE[k]*(1+pct);
+    const pd={...BASE};pd[k]=BASE[k]*(1-pct);
+    vu.push(+(calcNPV(pu)-bv).toFixed(1));
+    vd.push(+(calcNPV(pd)-bv).toFixed(1));
+    tu.push(+(calcIRR(pu)-bt).toFixed(2));
+    td.push(+(calcIRR(pd)-bt).toFixed(2));
+  });
+  const names=SENS_KEYS.map(s=>s[1]);
+  const cfg=(ups,dns,unit)=>({type:'bar',data:{labels:names,datasets:[
+    {label:'Escenario alto',data:ups,backgroundColor:'rgba(239,68,68,0.65)',borderColor:'#b91c1c',borderWidth:1},
+    {label:'Escenario bajo',data:dns,backgroundColor:'rgba(37,99,235,0.65)',borderColor:'#1e40af',borderWidth:1},
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:11}}}},scales:{x:{ticks:{callback:v=>v+unit}}}}});
+  mk('c-torn-van',cfg(vu,vd,'M'));
+  mk('c-torn-tir',cfg(tu,td,'%'));
+}
+
+function drawSpider(){
+  const pct=+document.getElementById('sl-torn').value;
+  const steps=[-pct,-pct*0.67,-pct*0.33,0,pct*0.33,pct*0.67,pct];
+  const ds=SENS_KEYS.map(([k,l,c])=>({label:l,data:steps.map(s=>{const pp={...BASE};pp[k]=BASE[k]*(1+s/100);return+calcNPV(pp).toFixed(1);}),borderColor:c,backgroundColor:'transparent',tension:0.3,pointRadius:3,borderWidth:2}));
+  const ds2=SENS_KEYS.map(([k,l,c])=>({label:l,data:steps.map(s=>{const pp={...BASE};pp[k]=BASE[k]*(1+s/100);return+calcIRR(pp).toFixed(2);}),borderColor:c,backgroundColor:'transparent',tension:0.3,pointRadius:3,borderWidth:2}));
+  const sLbl=steps.map(s=>(s>0?'+':'')+s.toFixed(0)+'%');
+  mk('c-spider',{type:'line',data:{labels:sLbl,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'M'}}}}});
+  mk('c-spider-tir',{type:'line',data:{labels:sLbl,datasets:ds2},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10,font:{size:11}}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+  document.getElementById('spider-lgnd').innerHTML=SENS_KEYS.map(([k,l,c])=>`<div class="li"><span class="ld" style="background:${c}"></span>${l}</div>`).join('');
+}
+
+function buildMatriz(){
+  // Precios Au vs CAPEX inicial — igual que tabla PFS
+  const auP=[1320,1485,1650,1815,1980];
+  const caps=[740,832,925,1018,1110]; // ±20%, ±10%, base, +10%, +20%
+  let html=`<table class="tbl"><thead><tr><th>Au$/oz \\ CAPEX</th>${caps.map(c=>`<th>$${c}M (${((c/925-1)*100).toFixed(0)}%)</th>`).join('')}</tr></thead><tbody>`;
+  auP.forEach((a,ai)=>{
+    const pctAu=((a/1650-1)*100).toFixed(0);
+    html+=`<tr><td style="font-weight:600;color:#94a3b8">$${a} (${pctAu>0?'+':''}${pctAu}%)</td>`;
+    caps.forEach(c=>{
+      const v=calcNPV({...BASE,pAu:a,capex_ini:c}).toFixed(0)*1;
+      const col=v<0?'#ef4444':v<1500?'#f59e0b':'#10b981';
+      html+=`<td style="color:${col};font-weight:600">${v.toLocaleString()} M</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('matriz-table').innerHTML=html;
+}
+
+function runMC(){
+  const pct=+document.getElementById('mc-var').value/100;
+  const n=+document.getElementById('mc-n').value;
+  const keys=['pAu','pCu','capex_ini','opex_f3','rec_au'];
+  const vans=[],tirs=[];
+  for(let i=0;i<n;i++){
+    const pp={...BASE};
+    keys.forEach(k=>{pp[k]=BASE[k]*(1+pct*(Math.random()*2-1));});
+    // propagar OPEX fases
+    pp.opex_f1=pp.opex_f3*(BASE.opex_f1/BASE.opex_f3);
+    pp.opex_f2=pp.opex_f3*(BASE.opex_f2/BASE.opex_f3);
+    const R=calcModel(pp);
+    vans.push(R.npvPost);tirs.push(R.irrPost);
+  }
+  const avg=a=>a.reduce((s,v)=>s+v,0)/a.length;
+  const std=a=>{const m=avg(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length);}
+  const pctile=(a,p)=>{const s=[...a].sort((a,b)=>a-b);return s[Math.floor(s.length*p)];}
+  document.getElementById('mc-van-avg').textContent = avg(vans).toFixed(0)+' M';
+  document.getElementById('mc-tir-avg').textContent = avg(tirs).toFixed(1)+'%';
+  const prob=(vans.filter(v=>v<0).length/n*100);
+  document.getElementById('mc-prob').textContent    = prob.toFixed(1)+'%';
+  document.getElementById('mc-prob-bar').style.width= Math.min(prob,100)+'%';
+  document.getElementById('mc-std').textContent     = std(vans).toFixed(0)+' M';
+  document.getElementById('mc-p10').textContent     = pctile(vans,0.1).toFixed(0)+' M';
+  document.getElementById('mc-p50').textContent     = pctile(vans,0.5).toFixed(0)+' M';
+  document.getElementById('mc-p90').textContent     = pctile(vans,0.9).toFixed(0)+' M';
+
+  function hist(data,bins){
+    const mn=Math.min(...data),mx=Math.max(...data),w=(mx-mn)/bins;
+    const l=[],c=[];
+    for(let i=0;i<bins;i++){const lo=mn+i*w;l.push(lo.toFixed(0));c.push(data.filter(v=>v>=lo&&v<lo+w).length);}
+    return{l,c};
+  }
+  const hv=hist(vans,25),ht=hist(tirs,20);
+  mk('c-mc-van',{type:'bar',data:{labels:hv.l,datasets:[{data:hv.c,backgroundColor:hv.l.map(v=>+v<0?'rgba(239,68,68,0.7)':'rgba(16,185,129,0.65)'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,font:{size:10}}},y:{}}}});
+  mk('c-mc-tir',{type:'bar',data:{labels:ht.l,datasets:[{data:ht.c,backgroundColor:'rgba(59,130,246,0.65)',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,font:{size:10}}},y:{}}}});
+  const sorted=[...vans].sort((a,b)=>a-b);
+  const step=Math.max(1,Math.floor(sorted.length/60));
+  mk('c-mc-cum',{type:'line',data:{labels:sorted.filter((_,i)=>i%step===0).map(v=>v.toFixed(0)),datasets:[{data:sorted.filter((_,i)=>i%step===0).map((_,i,a)=>+((i+1)/a.length*100).toFixed(1)),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',fill:true,tension:0.3,pointRadius:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,font:{size:10}}},y:{ticks:{callback:v=>v+'%'}}}}});
+}
+
+function buildEscenarios(){
+  // Usar precios exactos de la tabla de sensibilidad del PFS
+  const escs=[
+    {id:'p', pAu:1320, label:'Pesimista', col:'#ef4444'}, // -20%
+    {id:'b', pAu:1650, label:'Base',      col:'#3b82f6'}, // base
+    {id:'o', pAu:1980, label:'Optimista', col:'#10b981'}, // +20%
+  ];
+  const results=escs.map(e=>{
+    const pp={...BASE,pAu:e.pAu};
+    const R=calcModel(pp);
+    document.getElementById('esc-van-'+e.id).textContent=R.npvPost.toFixed(0)+' M';
+    document.getElementById('esc-tir-'+e.id).textContent=R.irrPost.toFixed(1)+'%';
+    document.getElementById('esc-pb-'+e.id).textContent=R.pbPost.toFixed(1)+' a';
+    return R;
+  });
+  mk('c-esc-van',{type:'bar',data:{labels:escs.map(e=>e.label+'\n($'+e.pAu+'/oz)'),datasets:[{data:results.map(r=>+r.npvPost.toFixed(0)),backgroundColor:escs.map(e=>e.col+'b3'),borderColor:escs.map(e=>e.col),borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'M'}}}}});
+  const lbl=Array.from({length:results[0].n},(_,i)=>'A'+(i-BASE.pp));
+  mk('c-esc-fcf',{type:'line',data:{labels:lbl,datasets:escs.map((e,i)=>({label:e.label,data:results[i].fcf_post.map(v=>+(v/1e6).toFixed(1)),borderColor:e.col,tension:0.3,pointRadius:i===1?2:1,borderWidth:i===1?3:2,borderDash:i===1?[]:[5,3]}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',boxWidth:12,font:{size:11}}}},scales:{y:{ticks:{callback:v=>v+'M'}}}}});
+}
+
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
